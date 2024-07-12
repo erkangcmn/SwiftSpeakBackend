@@ -1,38 +1,39 @@
 "use strict";
-const express = require("express"),
-    app = express(),
-    bodyParser = require('body-parser'),
-    http = require("http"),
-    config = require("./config"), // token için yazdığımız config dosyasını dahil ettik
-    verifyToken = require("./middleware/verifytoken"),
-    cors = require("cors"),
-    mongoose = require("mongoose");
 
+const express = require("express");
+const app = express();
+const bodyParser = require('body-parser');
+const http = require("http");
+const config = require("./config");
+const verifyToken = require("./middleware/verifytoken");
+const cors = require("cors");
+const mongoose = require("mongoose");
+
+// Middleware
 app.use(express.json());
-const corsOptions = {
-    origin: "http://localhost:19006",
-    optionsSuccessStatus: 200,
-};
-app.set("api_secret_key", config.api_secret_key); // token için oluşturduğumuz bilgiyi kullanmak için set ettik (kullanımı login.jsde app.get şeklinde kullandık)
+app.use(cors({ origin: "http://localhost:19006", optionsSuccessStatus: 200 }));
 
-//Database connect
+// API anahtarını ayarla
+app.set("api_secret_key", config.api_secret_key);
+
+// Database bağlantısı
 mongoose.set("strictQuery", false);
-mongoose.connect("mongodb+srv://chatAppUser:Za6OgDCWERCBXu7v@chatapp.yyr4bcc.mongodb.net/?retryWrites=true&w=majority"); //veritabanı oluşturduk
+mongoose.connect("mongodb+srv://chatAppUser:Za6OgDCWERCBXu7v@chatapp.yyr4bcc.mongodb.net/?retryWrites=true&w=majority");
 mongoose.connection.on("open", () => { console.log("MongoDB: connected"); });
 mongoose.connection.on("error", (err) => { console.log("MongoDB: error", err); });
 
-// Pages
+// Routes
 const Authenticate = require("./routes/authenticate");
-const Home = require("./routes/home")
+const Home = require("./routes/home");
 
-//Page Use
-app.use("/", cors(corsOptions));
+// Route kullanımı
 app.use("/", Authenticate);
 app.use("/api/", verifyToken);
-app.use("/api/", Home)
+app.use("/api/", Home);
 
-
-
+// Sunucuyu başlat
 app.listen(3031, () => {
     console.log(`Server listening on port ${3031}`);
 });
+
+module.exports = app;

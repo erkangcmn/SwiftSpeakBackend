@@ -1,19 +1,13 @@
 "use strict";
 const jwt = require("jsonwebtoken");
 
-module.exports = async (req, res, next) => {
-    const token = req.headers['x-access-token'];
+module.exports = (req, res, next) => {
+    const token = req.headers["authorization"];
+    if (!token) return res.status(403).send("Token gereklidir");
 
-    try {
-        if (!token)throw new Error("Token bulunamadı!");  
-        const decoded = await jwt.verify(token, req.app.get('api_secret_key'));
-        req.decode = decoded;
+    jwt.verify(token, req.app.get("api_secret_key"), (err, decoded) => {
+        if (err) return res.status(500).send("Token geçersiz");
+        req.userId = decoded.id;
         next();
-        
-    } catch (err) {
-        res.json({
-            status: false,
-            message: err.message || "Token Geçersiz!"
-        });
-    }
+    });
 };

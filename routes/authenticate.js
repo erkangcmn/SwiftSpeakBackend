@@ -1,47 +1,71 @@
 "use strict";
 
-const express = require("express"),
-    router = express.Router(),
-    bcrypt = require("bcryptjs"),
-    jwt = require("jsonwebtoken");
+const express = require("express");
+const router = express.Router();
+const admin = require("../config").admin;
+const User = require("../models/users");
+const jwt = require("jsonwebtoken");
 
-const User = require("../models/users"); //user database yapısını dahil ettik
-
-router.post("/register", async (req, res) => {
+// Doğrulama kodu gönderme
+router.post("/send-code", async (req, res) => {
     try {
-        const { number, name, password } = req.body;
+        const { number } = req.body;
 
-        if (await User.findOne({ number })) return res.json({ status: false, message: "Bu numaraya ait bir hesap zaten var" });
-
-        const hash = await bcrypt.hash(password, 10);
-        const savedUser = await new User({ email, name, phone, company, password: hash }).save();
-
-        const token = jwt.sign({ id: savedUser._id }, req.app.get("api_secret_key"));
-
-        res.json({ id: savedUser._id, token, status: true });
-    } catch (err) {
-        res.json(err);
-    }
-});
-
-
-router.post("/login", async (req, res) => {
-    try {
-        const { number, password } = req.body;
-
-        const user = await User.findOne({ number }).select("+password");
+        // Kullanıcıyı kontrol et
+        const user = await User.findOne({ number });
         if (!user) return res.json({ status: false, message: "Kullanıcı bulunamadı" });
 
-        const passwordMatch = await bcrypt.compare(password, user.password);
-        if (!passwordMatch) return res.json({ stauts: false, message: "Şifreniz hatalı" });
+        // Firebase Authentication ile SMS doğrulama kodu gönder
+        const verificationId = await admin.auth().createCustomToken(number);
+        
+        // Kullanıcının doğrulama kodunu güncelle
+        user.verificationCode = verificationId; 
+        await user.save();
 
-        const token = jwt.sign({ id: user._id }, req.app.get("api_secret_key"));
-        res.json({ status: true, token, id: user._id });
-
+        res.json({ status: true, message: "Doğrulama kodu gönderildi", verificationId });
     } catch (err) {
-        res.json(err);
+        res.json({ status: false, error: err.message });
     }
 });
 
-//TODO: Kullanıcı şifresini unutursa kontrol ve yeniden şifre güncellemesi gerekebilir
+// Doğrulama kodu kontrolü ve oturum açma
+router.post("/verify-code", async (req, res) => {
+    try {
+        const { number, verificationCode } = req.body;
+
+        // Kullanıcıyı kontrol et
+        const user = await User.findOne({ number });
+        if (!user) return res.json({ status: false, message: "Kullanıcı bulunamadı" });
+
+        // Doğrulama kodunu kontrol et
+        if (user.verificationCode !== verificationCode) {
+            return res.json({ status: false, message: "Doğrulama kodu hatalı" });
+        }
+
+        // Kullanıcıya JWT token oluştur
+        const token = jwt.sign({ id: user._id }, req.app.get("api_secret_key"));
+        res.json({ status: true, token, id: user._id });
+    } catch (err) {
+        res.json({ status: false, error: err.message });
+    }
+});
+
+// Kullanıcı kaydı
+router.post("/register", async (req, res) => {
+    try {
+        const { number } = req.body;
+
+        const userRecord = await admin.auth().createUser({
+            phoneNumber: number,
+        });
+
+        const newUser = new User({ number });
+        await newUser.save();
+
+        res.json({ status: true, userId: userRecord.uid });
+    } catch (error) {
+        res.json({ status: false, error: error.message });
+    }
+});
+
 module.exports = router;
