@@ -18,9 +18,12 @@ app.set("api_secret_key", config.api_secret_key);
 
 // Database bağlantısı
 mongoose.set("strictQuery", false);
-mongoose.connect("mongodb+srv://chatAppUser:Za6OgDCWERCBXu7v@chatapp.yyr4bcc.mongodb.net/?retryWrites=true&w=majority");
+
+mongoose.connect("mongodb+srv://erkangocmn:GKaCMKeBk8eufIFH@swiftspeak.byjgzea.mongodb.net/?retryWrites=true&w=majority&appName=SwiftSpeak")
+    .then(() => console.log("MongoDB: connected"))
+    .catch((err) => console.log("MongoDB: error", err));
 mongoose.connection.on("open", () => { console.log("MongoDB: connected"); });
-mongoose.connection.on("error", (err) => { console.log("MongoDB: error", err); });
+mongoose.connection.on("error", (err) => { console.log("MongoDB:", err); });
 
 // Routes
 const Authenticate = require("./routes/authenticate");
