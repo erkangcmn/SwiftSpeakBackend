@@ -54,7 +54,7 @@ router.post("/verify-code", async (req, res) => {
 router.post("/register", async (req, res) => {
     try {
         const { number } = req.body;
-
+        console.log("Selam:" + number)
         const userRecord = await admin.auth().createUser({
             phoneNumber: number,
         });
