@@ -54,11 +54,13 @@ router.post("/verify-code", async (req, res) => {
 router.post("/register", async (req, res) => {
     try {
         const { number } = req.body;
-        console.log("Selam:" + number)
+        //ToDo: kullanıcı kayıt olurken E.164 standardına uygun olmalıdır. yani + ülke kodu telefon numarası şeklinde olmalıdır
+
         const userRecord = await admin.auth().createUser({
             phoneNumber: number,
         });
-
+      
+        console.log("Selam:" + userRecord)
         const newUser = new User({ number });
         await newUser.save();
 
