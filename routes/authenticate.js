@@ -6,27 +6,50 @@ const admin = require("../config").admin;
 const User = require("../models/users");
 const jwt = require("jsonwebtoken");
 
-// Doğrulama kodu gönderme
-router.post("/send-code", async (req, res) => {
+router.post("/register", async (req, res) => {
     try {
         const { number } = req.body;
 
+        // E.164 formatında telefon numarasını kontrol et
+        if (!/^(\+|00)\d{1,3}\d{7,15}$/.test(number)) {
+            return res.json({ status: false, message: "Geçersiz telefon numarası formatı. Lütfen E.164 formatını kullanın." });
+        }
+
         // Kullanıcıyı kontrol et
-        const user = await User.findOne({ number });
-        if (!user) return res.json({ status: false, message: "Kullanıcı bulunamadı" });
-
-        // Firebase Authentication ile SMS doğrulama kodu gönder
-        const verificationId = await admin.auth().createCustomToken(number);
+        const existingUser = await User.findOne({ number });
+        console.log("Checking for user with number:", number);
         
-        // Kullanıcının doğrulama kodunu güncelle
-        user.verificationCode = verificationId; 
-        await user.save();
+        const verificationCode = generateVerificationCode();
 
-        res.json({ status: true, message: "Doğrulama kodu gönderildi", verificationId });
-    } catch (err) {
-        res.json({ status: false, error: err.message });
+        if (existingUser) {
+            // Kullanıcı mevcutsa, doğrulama kodunu mevcut kullanıcıya gönder
+            await admin.auth().sendVerificationCode(number, verificationCode);
+            return res.json({ status: true, message: "Bu telefon numarası zaten kayıtlı. Doğrulama kodu gönderildi.", userId: existingUser.uid });
+        }
+
+        // Kullanıcıyı oluştur
+        const userRecord = await admin.auth().createUser({
+            phoneNumber: number,
+        });
+
+        const newUser = new User({ number, verificationCode, uid: userRecord.uid });
+        await newUser.save();
+
+        // Doğrulama kodunu SMS olarak gönder
+        await admin.auth().sendVerificationCode(number, verificationCode);
+
+        res.json({ status: true, message: "Kullanıcı başarıyla kaydedildi, doğrulama kodu gönderildi.", userId: userRecord.uid });
+    } catch (error) {
+        res.json({ status: false, error: error.message });
     }
 });
+
+// Rastgele doğrulama kodu oluşturma fonksiyonu
+function generateVerificationCode() {
+    return Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit code
+}
+
+
 
 // Doğrulama kodu kontrolü ve oturum açma
 router.post("/verify-code", async (req, res) => {
@@ -38,7 +61,8 @@ router.post("/verify-code", async (req, res) => {
         if (!user) return res.json({ status: false, message: "Kullanıcı bulunamadı" });
 
         // Doğrulama kodunu kontrol et
-        if (user.verificationCode !== verificationCode) {
+        const checkCode = user.verificationCode === verificationCode;
+        if (!checkCode) {
             return res.json({ status: false, message: "Doğrulama kodu hatalı" });
         }
 
@@ -47,26 +71,6 @@ router.post("/verify-code", async (req, res) => {
         res.json({ status: true, token, id: user._id });
     } catch (err) {
         res.json({ status: false, error: err.message });
-    }
-});
-
-// Kullanıcı kaydı
-router.post("/register", async (req, res) => {
-    try {
-        const { number } = req.body;
-        //ToDo: kullanıcı kayıt olurken E.164 standardına uygun olmalıdır. yani + ülke kodu telefon numarası şeklinde olmalıdır
-
-        const userRecord = await admin.auth().createUser({
-            phoneNumber: number,
-        });
-      
-        console.log("Selam:" + userRecord)
-        const newUser = new User({ number });
-        await newUser.save();
-
-        res.json({ status: true, userId: userRecord.uid });
-    } catch (error) {
-        res.json({ status: false, error: error.message });
     }
 });
 
