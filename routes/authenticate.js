@@ -6,71 +6,80 @@ const admin = require("../config").admin;
 const User = require("../models/users");
 const jwt = require("jsonwebtoken");
 
+//twillo
+const twilio = require("twilio");
+const accountSid = "AC61d048c428b979c68e365afe25c5a2ae";
+const authToken = "8db9f1f604fc6648d58a2fb6e39e1e02";
+const twilioClient  = twilio(accountSid, authToken);
+const verifySid = "MG13188195b9c25a668246331a15d8e63e"; // Replace with your actual Twilio Verify SID
+
+
+async function sendVerificationCode(number) {
+    try {
+        await twilioClient.verify.v2.services(verifySid).verifications.create({
+            channel: "sms",
+            to: number,
+        });
+        return { status: true, message: "Verification code sent." };
+    } catch (error) {
+        console.error("Error sending verification code:", error);
+        return { status: false, error: error.message };
+    }
+}
+
 router.post("/register", async (req, res) => {
     try {
         const { number } = req.body;
-
-        // E.164 formatında telefon numarasını kontrol et
+        // Validate phone number format
         if (!/^(\+|00)\d{1,3}\d{7,15}$/.test(number)) {
-            return res.json({ status: false, message: "Geçersiz telefon numarası formatı. Lütfen E.164 formatını kullanın." });
+            return res.json({ status: false, message: "Invalid phone number format. Please use E.164 format." });
         }
-
-        // Kullanıcıyı kontrol et
-        const existingUser = await User.findOne({ number });
-        console.log("Checking for user with number:", number);
         
-        const verificationCode = generateVerificationCode();
-
+        // Check if the user exists
+        const existingUser = await User.findOne({ number });
         if (existingUser) {
-            // Kullanıcı mevcutsa, doğrulama kodunu mevcut kullanıcıya gönder
-            await admin.auth().sendVerificationCode(number, verificationCode);
-            return res.json({ status: true, message: "Bu telefon numarası zaten kayıtlı. Doğrulama kodu gönderildi.", userId: existingUser.uid });
+            const result = await sendVerificationCode(number);
+            return res.json(result);
         }
 
-        // Kullanıcıyı oluştur
-        const userRecord = await admin.auth().createUser({
-            phoneNumber: number,
-        });
-
-        const newUser = new User({ number, verificationCode, uid: userRecord.uid });
+        // Create a new user
+        const userRecord = await admin.auth().createUser({ phoneNumber: number });
+        const newUser = new User({ number, uid: userRecord.uid });
         await newUser.save();
 
-        // Doğrulama kodunu SMS olarak gönder
-        await admin.auth().sendVerificationCode(number, verificationCode);
-
-        res.json({ status: true, message: "Kullanıcı başarıyla kaydedildi, doğrulama kodu gönderildi.", userId: userRecord.uid });
+        // Send verification code
+        const result = await sendVerificationCode(number);
+        res.json(result);
     } catch (error) {
+        console.error("Error in registration:", error);
         res.json({ status: false, error: error.message });
     }
 });
 
-// Rastgele doğrulama kodu oluşturma fonksiyonu
-function generateVerificationCode() {
-    return Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit code
-}
 
-
-
-// Doğrulama kodu kontrolü ve oturum açma
+// Verify code and login
 router.post("/verify-code", async (req, res) => {
     try {
         const { number, verificationCode } = req.body;
 
-        // Kullanıcıyı kontrol et
+        // Check if user exists
         const user = await User.findOne({ number });
-        if (!user) return res.json({ status: false, message: "Kullanıcı bulunamadı" });
+        if (!user) return res.json({ status: false, message: "User not found" });
 
-        // Doğrulama kodunu kontrol et
-        const checkCode = user.verificationCode === verificationCode;
-        if (!checkCode) {
-            return res.json({ status: false, message: "Doğrulama kodu hatalı" });
-        }
+        // Verify the code with Twilio
+        const { status } = await twilioClient.verify.v2.services(verifySid).verificationChecks.create({
+            to: number,
+            code: verificationCode
+        });
 
-        // Kullanıcıya JWT token oluştur
+        if (status !== "approved") return res.json({ status: false, message: "Incorrect verification code" });
+
+        // Create a JWT token for the user
         const token = jwt.sign({ id: user._id }, req.app.get("api_secret_key"));
         res.json({ status: true, token, id: user._id });
-    } catch (err) {
-        res.json({ status: false, error: err.message });
+    } catch (error) {
+        console.error("Error verifying code:", error);
+        res.json({ status: false, error: error.message });
     }
 });
 
