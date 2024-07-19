@@ -11,7 +11,7 @@ const twilio = require("twilio");
 const accountSid = "AC61d048c428b979c68e365afe25c5a2ae";
 const authToken = "8db9f1f604fc6648d58a2fb6e39e1e02";
 const twilioClient  = twilio(accountSid, authToken);
-const verifySid = "MG13188195b9c25a668246331a15d8e63e"; // Replace with your actual Twilio Verify SID
+const verifySid = "VA597cb7cb58357d5f2880ceab60f31d9a"; // Replace with your actual Twilio Verify SID
 
 
 async function sendVerificationCode(number) {
