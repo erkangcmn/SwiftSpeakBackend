@@ -32,7 +32,7 @@ router.post("/register", async (req, res) => {
         const { number } = req.body;
         // Validate phone number format
         if (!/^(\+|00)\d{1,3}\d{7,15}$/.test(number)) {
-            return res.json({ status: false, message: "Invalid phone number format. Please use E.164 format." });
+            return res.json({ status: false, message: "Telefon Numaranızı Lütfen Kontrol Ediniz!" });
         }
         
         // Check if the user exists
