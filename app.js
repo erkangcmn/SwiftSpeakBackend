@@ -8,7 +8,9 @@ const verifyToken = require("./middleware/verifytoken");
 const httpServer = http.createServer(app);
 const cors = require("cors");
 const mongoose = require("mongoose");
-
+const io = require("socket.io").listen(httpServer);
+const nsp = io.of("/chats");
+const messages = require("./services/messagesServices");
 
 // Database bağlantısı
 mongoose.set("strictQuery", false);
@@ -30,6 +32,7 @@ const corsOptions = {
     optionsSuccessStatus: 200,
 };
 
+
 // API anahtarını ayarla
 app.set("api_secret_key", config.api_secret_key);
 
@@ -39,6 +42,26 @@ app.use("/", cors(corsOptions));
 app.use("/", Authenticate);
 app.use("/api/", verifyToken);
 app.use("/api/", Home);
+
+
+//soketio
+nsp.on("connection", (socket) => {
+    socket.join(socket.handshake.query.from + "_" + socket.handshake.query.to); // kendi odasına katılıyor
+
+    socket.on("getFromMobile", (message) => {
+        var status = messages.addToDatabase(
+            message,
+            socket.handshake.query.from,
+            socket.handshake.query.to
+        );
+        if (status) {
+            nsp
+                .to(socket.handshake.query.to + "_" + socket.handshake.query.from)
+                .emit("sendToMobile", message); // karşı odaya mesaj gönderiyor
+        }
+    });
+});
+
 
 // Sunucuyu başlat
 httpServer.listen(3031);
