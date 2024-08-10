@@ -46,21 +46,19 @@ app.use("/api/", Home);
 
 //soketio
 nsp.on("connection", (socket) => {
-    socket.join(socket.handshake.query.from + "_" + socket.handshake.query.to); // kendi odasına katılıyor
+    const from = socket.handshake.query.from;
+    const to = socket.handshake.query.to;
+    
+    socket.join(from + "_" + to); // Kullanıcının odasına katılmasını sağlar
 
     socket.on("getFromMobile", (message) => {
-        var status = messages.addToDatabase(
-            message,
-            socket.handshake.query.from,
-            socket.handshake.query.to
-        );
+        const status = messages.addToDatabase(message, from, to);
         if (status) {
-            nsp
-                .to(socket.handshake.query.to + "_" + socket.handshake.query.from)
-                .emit("sendToMobile", message); // karşı odaya mesaj gönderiyor
+            nsp.to(to + "_" + from).emit("sendToMobile", message); // Karşı odadaki kullanıcıya mesaj gönderir
         }
     });
 });
+
 
 
 // Sunucuyu başlat
