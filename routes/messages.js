@@ -3,11 +3,12 @@ const express = require("express");
 const router = express.Router();
 const jwt = require("jsonwebtoken");
 const Message_List = require("../models/messages");
-const User = require("../models/userInfo");
+const User = require("../models/users");
 
 // Get messages for a specific user
 router.get("/messages", async (req, res) => {
     try {
+        console.log('hello')
         const { id } = req.query;
         const token = req.headers['x-access-token'];
         const decoded = jwt.verify(token, req.app.get('api_secret_key'));

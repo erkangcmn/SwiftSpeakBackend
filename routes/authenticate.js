@@ -9,7 +9,7 @@ const twilio = require("twilio");
 
 const accountSid = "AC61d048c428b979c68e365afe25c5a2ae";
 const authToken = "8db9f1f604fc6648d58a2fb6e39e1e02";
-const verifySid = "VA4d3aac8448d6d6d2671cdb7f53bd57e7";
+const verifySid = "VAfd8cc63dc3535cffbf26ec66b5569134";
 const twilioClient = twilio(accountSid, authToken);
 
 async function sendVerificationCode(number) {

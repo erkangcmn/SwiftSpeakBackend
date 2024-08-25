@@ -24,6 +24,7 @@ mongoose.connect("mongodb+srv://erkangocmn:bPa6HdYUb5UllNdT@swiftspeak.kovaksa.m
 // Routes
 const Authenticate = require("./routes/authenticate");
 const Home = require("./routes/home");
+const Messages = require("./routes/messages")
 
 // Middleware
 app.use(express.json({ limit: '10mb', extended: false }));
@@ -39,8 +40,9 @@ app.set("api_secret_key", config.api_secret_key);
 // Route kullanımı
 app.use("/", cors(corsOptions));
 app.use("/", Authenticate);
-app.use("/api/", verifyToken);
+//app.use("/api/", verifyToken);
 app.use("/api/", Home);
+app.use("/api/", Messages);
 
 // Socket.IO
 nsp.on("connection", (socket) => {
