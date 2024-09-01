@@ -40,7 +40,7 @@ app.set("api_secret_key", config.api_secret_key);
 // Route kullanımı
 app.use("/", cors(corsOptions));
 app.use("/", Authenticate);
-//app.use("/api/", verifyToken);
+app.use("/api/", verifyToken);
 app.use("/api/", Home);
 app.use("/api/", Messages);
 

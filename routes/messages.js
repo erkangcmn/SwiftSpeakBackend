@@ -6,16 +6,17 @@ const Message_List = require("../models/messages");
 const User = require("../models/users");
 
 // Get messages for a specific user
-router.get("/messages", async (req, res) => {
+router.get("/messages", async (req, res) => { // Corrected path
     try {
-        console.log('hello')
         const { id } = req.query;
+        console.log(id);
         const token = req.headers['x-access-token'];
+        console.log(token)
         const decoded = jwt.verify(token, req.app.get('api_secret_key'));
-
+console.log(decoded)//id ile decoded id aynı değil
         // Kullanıcıya erişim izni kontrolü
-        if (decoded.id !== id && !decoded.is_dating) {
-            return res.json({ status: false });
+        if (decoded.id !== id) {
+            return res.status(403).json({ status: false, message: "Erişim izni yok" });
         }
 
         const user = await User.findById(id).exec();
@@ -36,10 +37,10 @@ router.get("/messages", async (req, res) => {
             messages: userList.filter(user => user !== null)
         });
     } catch (err) {
-        res.json({ err });
+        console.error('hata', err);
+        res.status(500).json({ err });
     }
 });
-
 
 // Get messages from a specific message list
 router.get("/message", async (req, res) => {
