@@ -9,11 +9,8 @@ const User = require("../models/users");
 router.get("/messages", async (req, res) => { // Corrected path
     try {
         const { id } = req.query;
-        console.log(id);
         const token = req.headers['x-access-token'];
-        console.log(token)
         const decoded = jwt.verify(token, req.app.get('api_secret_key'));
-console.log(decoded)//id ile decoded id aynı değil
         // Kullanıcıya erişim izni kontrolü
         if (decoded.id !== id) {
             return res.status(403).json({ status: false, message: "Erişim izni yok" });

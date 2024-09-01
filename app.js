@@ -4,7 +4,7 @@ const express = require("express");
 const app = express();
 const http = require("http");
 const config = require("./config");
-const verifyToken = require("./middleware/verifytoken");
+const verifyToken = require("./middleware/verifyToken");
 const httpServer = http.createServer(app);
 const cors = require("cors");
 const mongoose = require("mongoose");
@@ -23,7 +23,7 @@ mongoose.connect("mongodb+srv://erkangocmn:bPa6HdYUb5UllNdT@swiftspeak.kovaksa.m
 
 // Routes
 const Authenticate = require("./routes/authenticate");
-const Home = require("./routes/home");
+const Home = require("./routes/Home");
 const Messages = require("./routes/messages")
 
 // Middleware
