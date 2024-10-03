@@ -1,10 +1,10 @@
 *** messages.js ***
 Mesaj JSON örneği
 {
-    "sender": "userId1",                     - Mesajı gönderen kullanıcının ID'si
-    "receiver": "userId2",                   - Mesajı alan kullanıcının ID'si
-    "content": "Merhaba, nasılsın?",         - Mesajın içeriği
-    "createdAt": "2024-08-05T15:30:00.000Z"  - Mesajın oluşturulma tarihi (ISO formatında)
+    "sender": "userId1",                     // Mesajı gönderen kullanıcının ID'si
+    "receiver": "userId2",                   // Mesajı alan kullanıcının ID'si
+    "content": "Merhaba, nasılsın?",         // Mesajın içeriği
+    "createdAt": "2024-08-05T15:30:00.000Z"  // Mesajın oluşturulma tarihi (ISO formatında)
 }
 
 
@@ -16,16 +16,17 @@ NOT:
 *** users.js ***
 User JSON örneği
 {
-    number: "+1234567890",          - Telefon numarası
-    username: "exampleUser",        - Kullanıcı adı
-    oneSignalId: "abcdefg123456",   - OneSignal kimliği
-    messages: [                     - Mesaj referansları (ID'ler)
-        "64b6d5c4f5f2e8b9d9e3e69a", - Mesaj ID 1
-        "64b6d5c4f5f2e8b9d9e3e69b"  - Mesaj ID 2
+    "number": "+1234567890",                  // Telefon numarası
+    "username": "exampleUser",                // Kullanıcı adı
+    "oneSignalId": "abcdefg123456",           // OneSignal kimliği
+    "messages": [                             // Mesaj referansları (ID'ler)
+        "64b6d5c4f5f2e8b9d9e3e69a",           // Mesaj ID 1
+        "64b6d5c4f5f2e8b9d9e3e69b"            // Mesaj ID 2
     ],
-    blockedUsers: [                 - Engellenen kullanıcı referansları (ID'ler)
-        "64b6d5c4f5f2e8b9d9e3e68a", - Engellenen kullanıcı ID 1
-        "64b6d5c4f5f2e8b9d9e3e68b"  - Engellenen kullanıcı ID 2
+    "blockedUsers": [                         // Engellenen kullanıcı referansları (ID'ler)
+        "64b6d5c4f5f2e8b9d9e3e68a",           // Engellenen kullanıcı ID 1
+        "64b6d5c4f5f2e8b9d9e3e68b"            // Engellenen kullanıcı ID 2
     ],
-    createdAt: new Date()           - Kullanıcının oluşturulma tarihi (şu anki tarih)
-};
+    "createdAt": "2024-08-05T15:30:00.000Z"  // Kullanıcının oluşturulma tarihi (ISO formatında)
+}
+
