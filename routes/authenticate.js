@@ -13,74 +13,77 @@ const twilioClient = twilio(accountSid, authToken);
 
 // Function to send a verification code using Twilio
 async function sendVerificationCode(number) {
-    try {
-        await twilioClient.verify.v2.services(verifySid).verifications.create({
-            channel: "sms",
-            to: number,
-        });
-        return { status: true, message: "Verification code sent." };
-    } catch (error) {
-        console.error("Error sending verification code:", error);
-        return { status: false, error: error.message };
-    }
+  try {
+    console.log("1")
+    await twilioClient.verify.v2.services(verifySid).verifications.create({
+      channel: "sms",
+      to: number,
+    });
+    return { status: true, message: "Verification code sent." };
+  } catch (error) {
+    console.error("Error sending verification code:", error);
+    return { status: false, error: error.message };
+  }
 }
 
 // Registration route
 router.post("/register", async (req, res) => {
-    try {
-        const { number } = req.body;
-
-        // Validate the phone number format
-        if (!/^(\+|00)\d{1,3}\d{7,15}$/.test(number)) {
-            return res.json({ status: false, message: "Telefon Numaranızı Lütfen Kontrol Ediniz!" });
-        }
-
-        // Check if the user already exists
-        let existingUser = await User.findOne({ number });
-        if (existingUser) {
-            const result = await sendVerificationCode(number);
-            return res.json({ status: true, result,existingUser});
-        }
-
-        // Create a new user in MongoDB
-        const newUser = new User({ number });
-        await newUser.save();
-
-        // Send verification code
-        const result = await sendVerificationCode(number);
-        return res.json({ status: true, result,existingUser:newUser });
-    } catch (error) {
-        console.error("Error in registration:", error);
-        res.json({ status: false, error: error.message });
+  try {
+    const { number } = req.body;
+    if (!/^(\+|00)\d{1,3}\d{7,15}$/.test(number)) {
+      return res.json({ status: false, message: "Telefon Numaranızı Lütfen Kontrol Ediniz!" });
     }
+    let existingUser = await User.findOne({ number });
+    const result = await sendVerificationCode(number);
+    res.json({ status: true, result, existingUser });
+  } catch (error) {
+    console.error("Error in registration:", error);
+    res.json({ status: false, error: error.message });
+  }
 });
+
+// Register username route for new users
+router.post("/register-username", async (req, res) => {
+  try {
+    const { number, username } = req.body;
+    const user = new User({ number, username });
+    await user.save();
+    res.json({ status: true, message: "User registered successfully." });
+  } catch (error) {
+    console.error("Error in username registration:", error);
+    res.json({ status: false, error: error.message });
+  }
+});
+
 
 // Verification route
 router.post("/verify-code", async (req, res) => {
-    try {
-        const { number, verificationCode } = req.body;
+  try {
+    const { number, verificationCode } = req.body;
+    // Verify the code using Twilio
+    const verification = await twilioClient.verify.v2.services(verifySid)
+      .verificationChecks.create({ to: number, code: verificationCode });
 
-        // Verify the code using Twilio
-        const verification = await twilioClient.verify.v2.services(verifySid)
-            .verificationChecks.create({ to: number, code: verificationCode });
-
-        if (verification.status !== "approved") {
-            return res.json({ status: false, message: "Incorrect verification code" });
-        }
-
-        // Retrieve the user from the database
-        const user = await User.findOne({ number });
-        if (!user) {
-            return res.json({ status: false, message: "User not found" });
-        }
-
-        // Generate JWT token
-        const token = jwt.sign({ id: user._id }, req.app.get("api_secret_key"), { expiresIn: "1h" });
-        res.json({ status: true, token, id: user._id });
-    } catch (error) {
-        console.error("Error verifying code:", error);
-        res.json({ status: false, error: error.message });
+    if (verification.status !== "approved") {
+      return res.json({ status: false, message: "Incorrect verification code" });
     }
+
+    // Retrieve the user from the database
+    const user = await User.findOne({ number });
+    if (!user) {
+      return res.json({ status: false, message: "User not found" });
+    }
+
+    // Generate JWT token
+    const payload = { id: user._id };
+    console.log(payload)
+    const token = jwt.sign(payload, req.app.get("api_secret_key"));
+    console.log(token)
+    res.json({ status: true, token, id: user._id });
+  } catch (error) {
+    console.error("Error verifying code:", error);
+    res.json({ status: false, error: error.message });
+  }
 });
 
 module.exports = router;
